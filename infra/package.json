@@ -27,7 +27,7 @@
     "@aws-sdk/client-dynamodb": "^3.325.0",
     "@aws-sdk/client-ssm": "^3.325.0",
     "@cdk-turnkey/stackname": "^2.1.0",
-    "aws-cdk-lib": "^2.77.0",
+    "aws-cdk-lib": "^2.80.0",
     "bufferutil": "^4.0.7",
     "utf-8-validate": "^6.0.3"
   }
