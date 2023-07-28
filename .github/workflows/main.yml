@@ -1,0 +1,99 @@
+name: CI
+concurrency: ci-${{ github.ref }}
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+jobs:
+  id-account:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Identify test account and region
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          aws sts get-caller-identity
+          echo ${AWS_DEFAULT_REGION} | sed 's/-/+/g'
+  test-rolename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install
+        working-directory: rolename
+        run: |
+          npm install
+      - name: Build
+        working-directory: rolename
+        run: |
+          npm run build
+      - name: Test
+        working-directory: rolename
+        run: |
+          npm test
+      - name: itest
+        working-directory: rolename
+        run: |
+          npm run itest
+  test-oidc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install
+        working-directory: oidc
+        run: |
+          npm install
+      - name: Build
+        working-directory: oidc
+        run: |
+          npm run build
+      - name: Test
+        working-directory: oidc
+        run: |
+          npm test
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          persist-credentials: false
+      - name: Install infra
+        working-directory: infra
+        run: |
+          npm install
+      - name: Build infra
+        working-directory: infra
+        run: |
+          npm run build
+      - name: Test infra
+        working-directory: infra
+        run: |
+          npm test
+      - name: Deploy the app stack to the test account
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        working-directory: infra
+        run: |
+          npx cdk bootstrap
+          STACKNAME=$(npx @cdk-turnkey/stackname@2.1.0 --suffix app --hash 6)
+          npx cdk deploy --require-approval never ${STACKNAME}
+      - name: Deploy content (test account)
+        working-directory: content
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          bash deploy-content.sh
+      - name: Run integration test (test account)
+        working-directory: itest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          bash itest.sh

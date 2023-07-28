@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "just-a-table-boto3"
+version = "0.1.0"
+description = "Use boto3 for interacting with resources, including a DynamoDB Table."
+authors = ["Douglas Naphas <douglasnaphas@gmail.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+packages = [{include = "just_a_table_boto3"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pendulum = "^2.1.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

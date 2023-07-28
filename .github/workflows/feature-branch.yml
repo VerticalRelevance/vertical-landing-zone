@@ -1,0 +1,79 @@
+name: CI-feature-branch
+concurrency: ci-${{ github.ref }}
+on:
+  push:
+    branches: ["*", "!main", "!master", "!skip/*"]
+  workflow_dispatch:
+jobs:
+  id-account:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Identify dev account and region
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          aws sts get-caller-identity
+          echo ${AWS_DEFAULT_REGION} | sed 's/-/+/g'
+  test-oidc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install
+        working-directory: oidc
+        run: |
+          npm install
+      - name: Build
+        working-directory: oidc
+        run: |
+          npm run build
+      - name: Test
+        working-directory: oidc
+        run: |
+          npm test
+  test-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          persist-credentials: false
+      - name: Install infra
+        working-directory: infra
+        run: |
+          npm install
+      - name: Build infra
+        working-directory: infra
+        run: |
+          npm run build
+      - name: Test infra
+        working-directory: infra
+        run: |
+          npm test
+      - name: Deploy the app stack to dev account
+        working-directory: infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          npx cdk bootstrap
+          STACKNAME=$(npx @cdk-turnkey/stackname@2.1.0 --suffix app --hash 6)
+          npx cdk deploy --require-approval never ${STACKNAME}
+      - name: Deploy content (dev account)
+        working-directory: content
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          bash deploy-content.sh
+      - name: Run integration test (dev account)
+        working-directory: itest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          bash itest.sh

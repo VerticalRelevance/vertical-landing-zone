@@ -1,0 +1,38 @@
+{
+  "name": "rolename",
+  "version": "0.1.0",
+  "description": "Compute a name for an AWS IAM role.",
+  "bin": {
+    "rolename": "./bin.js",
+    "rolename2": "./rolename2.js",
+    "r3": "./rolename3.js",
+    "r4": "./rolename4.js"
+  },
+  "main": "lib.js",
+  "files": [
+    "bin.js",
+    "lib.js",
+    "index.js",
+    "rolename2.js",
+    "rolename3.js",
+    "rolename4.js"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "itest": "bash itest/itest.sh"
+  },
+  "author": "Douglas Naphas <douglasnaphas@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@types/node": "^20.1.2",
+    "commander": "^10.0.1",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.1",
+    "jest": "^29.5.0"
+  }
+}
